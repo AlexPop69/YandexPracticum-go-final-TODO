@@ -13,16 +13,16 @@ import (
 
 const (
 	varEnvDBFile = "TODO_DBFILE"
-	stdDbPath    = "./internal/storage"
+	stdDbPath    = "./db"
 	stdDbName    = "scheduler.db"
 	dbDriver     = "sqlite"
 )
 
-type DataBase struct {
+type Storage struct {
 	db *sql.DB
 }
 
-func New(storagePath func() string) (*DataBase, error) {
+func New(storagePath func() string) (*Storage, error) {
 	dbPath := Path()
 
 	if isExist(dbPath) {
@@ -38,7 +38,7 @@ func New(storagePath func() string) (*DataBase, error) {
 
 	createNewTable(db)
 
-	return &DataBase{db: db}, nil
+	return &Storage{db: db}, nil
 }
 
 func Path() string {
