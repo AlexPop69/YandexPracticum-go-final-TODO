@@ -4,6 +4,6 @@ import "YandexPracticum-go-final-TODO/internal/storage"
 
 var Port = 7540
 var DBFile = "../" + storage.Path()
-var FullNextDate = false
+var FullNextDate = true
 var Search = false
 var Token = ``

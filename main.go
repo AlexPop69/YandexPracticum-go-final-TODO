@@ -21,6 +21,8 @@ func main() {
 
 	r.Handle("/*", handler.GetFront())
 
+	r.Get("/api/nextdate", handler.GetNextDate)
+
 	server := new(server.Server)
 	if err := server.Run(r); err != nil {
 		log.Fatalf("Server can't start: %v", err)
