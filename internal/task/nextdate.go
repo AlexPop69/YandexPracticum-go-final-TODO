@@ -1,7 +1,6 @@
 package task
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,40 +8,35 @@ import (
 )
 
 func NextDate(now time.Time, date string, repeat string) (string, error) {
+	// если правило повторения не указано или равно пустой строке, подставляется сегодняшнее число
+	if repeat == "" {
+		return now.Format("20060102"), nil
+	}
+
 	realDate, err := time.Parse("20060102", date)
 	if err != nil {
 		return "", fmt.Errorf("incorrect date %v", err)
 	}
 
-	if repeat == "" {
-		return "", errors.New("incorrect repetition rule - string is empty")
-	}
-
 	rule := string(repeat[0])
-
+	rightLen := len(repeat) > 2
 	var result string
 
-	switch rule {
+	switch {
 	//задача переносится на указанное число дней
-	case "d":
-		if len(repeat) > 2 {
-			result, err = everyDay(now, realDate, repeat[2:])
-		}
+	case rule == "d" && rightLen:
+		result, err = everyDay(now, realDate, repeat[2:])
 
-		// задача назначается в указанные дни недели, где 1 — понедельник, 7 — воскресенье
-	case "w":
-		if len(repeat) > 2 {
-			result, err = everyWeek(realDate, now, repeat[2:])
-		}
+	// задача назначается в указанные дни недели, где 1 — понедельник, 7 — воскресенье
+	case rule == "w" && rightLen:
+		result, err = everyWeek(realDate, now, repeat[2:])
 
-		// задача назначается в указанные дни месяца (1-31)
-	case "m":
-		if len(repeat) > 2 {
-			result, err = everyMonth(realDate, now, repeat[2:])
-		}
+	// задача назначается в указанные дни месяца (1-31)
+	case rule == "m" && rightLen:
+		result, err = everyMonth(realDate, now, repeat[2:])
 
 	// задача выполняется ежегодно
-	case "y":
+	case rule == "y":
 		result, err = everyYear(now, realDate)
 	default:
 		return "", fmt.Errorf("incorrect repetition rule %v", err)
@@ -54,7 +48,7 @@ func NextDate(now time.Time, date string, repeat string) (string, error) {
 func everyDay(now, date time.Time, days string) (string, error) {
 	d, err := strconv.Atoi(days)
 	if err != nil || d > 400 || d < 0 {
-		return "", fmt.Errorf(`incorrect repetition rule in "d" %v`, err)
+		return "", fmt.Errorf(`incorrect repetition rule in "d"`)
 	}
 
 	if date.Before(now) {
