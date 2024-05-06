@@ -8,8 +8,7 @@ import (
 )
 
 func NextDate(now time.Time, date string, repeat string) (string, error) {
-	// если правило повторения не указано или равно пустой строке, подставляется сегодняшнее число
-	if repeat == "" {
+	if repeat == "" || repeat == "d 1" {
 		return now.Format("20060102"), nil
 	}
 
@@ -49,6 +48,10 @@ func everyDay(now, date time.Time, days string) (string, error) {
 	d, err := strconv.Atoi(days)
 	if err != nil || d > 400 || d < 0 {
 		return "", fmt.Errorf(`incorrect repetition rule in "d"`)
+	}
+
+	if d == 1 && date.After(now) {
+		return date.AddDate(0, 0, 1).Format("20060102"), nil
 	}
 
 	if date.Before(now) {

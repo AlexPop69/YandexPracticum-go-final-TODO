@@ -23,6 +23,7 @@ func main() {
 
 	r.Get("/api/nextdate", handler.GetNextDate)
 	r.Post("/api/task", handler.AddTask(db))
+	r.Get("/api/tasks", handler.GetTasks(db))
 
 	server := new(server.Server)
 	if err := server.Run(r); err != nil {

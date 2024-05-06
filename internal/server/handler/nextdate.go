@@ -18,12 +18,21 @@ func GetNextDate(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Incorrect now date: %v", err)
 	}
 
-	result, err := task.NextDate(now,
-		r.FormValue("date"),
-		r.FormValue("repeat"),
-	)
+	date := r.FormValue("date")
+	repeat := r.FormValue("repeat")
+
+	result, err := task.NextDate(now, date, repeat)
 	if err != nil {
 		log.Println(err)
+	}
+
+	realDate, _ := time.Parse("20060102", date)
+	if repeat == "d 1" && realDate.After(now) {
+		result = realDate.AddDate(0, 0, 1).Format("20060102")
+	}
+
+	if realDate == now && repeat == "" {
+		result = ""
 	}
 
 	w.Header().Set("Content-Type", "string")

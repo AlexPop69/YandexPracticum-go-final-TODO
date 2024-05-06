@@ -11,9 +11,10 @@ import (
 	"time"
 )
 
-func AddTask(db *storage.Storage) http.HandlerFunc {
+func AddTask(storage *storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Received reqest POST AddTask")
+
 		var err error
 		var buf bytes.Buffer
 		var t task.Task
@@ -39,15 +40,11 @@ func AddTask(db *storage.Storage) http.HandlerFunc {
 		}
 
 		date, _ := time.Parse("20060102", t.Date)
-		if date.Before(time.Now()) || t.Repeat != "" {
+		if date.Before(time.Now()) {
 			t.Date, _ = task.NextDate(time.Now(), t.Date, t.Repeat)
 		}
 
-		if t.Repeat == "d 1" {
-			t.Date = time.Now().Format("20060102")
-		}
-
-		id, err := storage.Task.Add(db, &t)
+		id, err := storage.Add(&t)
 		if err != nil {
 			log.Fatalf("can't add task: %v", err)
 			return
@@ -72,5 +69,54 @@ func AddTask(db *storage.Storage) http.HandlerFunc {
 		}
 		log.Printf("Task %s id:%v added successfully", t.Title, id)
 	}
+}
 
+func GetTasks(db *storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println("Received reqest GET Tasks")
+
+		var tasks []task.Task
+		var err error
+
+		search := r.URL.Query().Get("search")
+
+		if search == "" {
+			tasks, err = db.GetList()
+			if err != nil {
+				log.Fatalf("can't get tasks: %v", err)
+			}
+		}
+
+		if search != "" {
+			tasks, err = db.SearchTasks(search)
+			if err != nil {
+				log.Fatalf("can't find tasks: %v", err)
+			}
+		}
+
+		if len(tasks) == 0 {
+			tasks = []task.Task{}
+		}
+
+		result := map[string][]task.Task{
+			"tasks": tasks,
+		}
+
+		resp, err := json.Marshal(result)
+		if err != nil {
+			log.Printf("Can`t marshal tasks: %v\n", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": string(err.Error())})
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+
+		_, err = w.Write(resp)
+		if err != nil {
+			log.Fatalf("can't write response: %v", err)
+		} else {
+			log.Printf("GetTasks is successful. %d tasks found", len(tasks))
+		}
+	}
 }
