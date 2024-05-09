@@ -9,7 +9,7 @@ import (
 
 func NextDate(now time.Time, date string, repeat string) (string, error) {
 	if repeat == "" {
-		return now.Format("20060102"), nil
+		return "", fmt.Errorf("repeat is empty")
 	}
 
 	validDate, err := time.Parse("20060102", date)
@@ -50,20 +50,12 @@ func everyDay(now, date time.Time, days string) (string, error) {
 		return "", fmt.Errorf(`incorrect repetition rule in "d"`)
 	}
 
-	if d == 1 && date.After(now) {
-		return date.AddDate(0, 0, 1).Format("20060102"), nil
+	resultDate := date.AddDate(0, 0, d)
+	for resultDate.Before(now) {
+		resultDate = resultDate.AddDate(0, 0, d)
 	}
 
-	if !(now.Format("20060102") == date.Format("20060102")) {
-		for date.Before(now) {
-			if date.After(now) || date.Equal(now) {
-				break
-			}
-			date = date.AddDate(0, 0, d)
-		}
-	}
-
-	return date.Format("20060102"), nil
+	return resultDate.Format("20060102"), nil
 }
 
 func everyWeek(date, now time.Time, repeat string) (string, error) {

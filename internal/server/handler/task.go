@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
 	"YandexPracticum-go-final-TODO/internal/storage"
 	"YandexPracticum-go-final-TODO/internal/task"
@@ -19,25 +18,22 @@ func AddTask(storage *storage.Storage) http.HandlerFunc {
 
 		err := json.NewDecoder(r.Body).Decode(&t)
 		if err != nil {
+			log.Println("Can't read request body", err)
 			http.Error(w, `{"error":"Can't read request body"}`, http.StatusBadRequest)
 			return
 		}
 
-		err = task.Check(t)
+		err = task.Check(&t)
 		if err != nil {
 			log.Println(err)
 			json.NewEncoder(w).Encode(map[string]string{"error": string(err.Error())})
 			return
 		}
 
-		date, _ := time.Parse("20060102", t.Date)
-		if date.Before(time.Now()) {
-			t.Date, _ = task.NextDate(time.Now(), t.Date, t.Repeat)
-		}
-
 		id, err := storage.Add(&t)
 		if err != nil {
-			log.Fatalf("can't add task: %v", err)
+			log.Printf("can't add task: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -173,7 +169,7 @@ func UpdateTask(storage *storage.Storage) http.HandlerFunc {
 			return
 		}
 
-		err = task.Check(t)
+		err = task.Check(&t)
 		if err != nil {
 			log.Println(err)
 			json.NewEncoder(w).Encode(map[string]string{"error": string(err.Error())})

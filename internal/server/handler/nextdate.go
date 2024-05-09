@@ -16,32 +16,18 @@ func GetNextDate(w http.ResponseWriter, r *http.Request) {
 	now, err := time.Parse("20060102", r.FormValue("now"))
 	if err != nil {
 		log.Printf("Incorrect now date: %v", err)
+		http.Error(w, "Incorrect now date", http.StatusBadRequest)
 		return
 	}
 
 	date := r.FormValue("date")
-	validDate, err := time.Parse("20060102", r.FormValue("date"))
-	if err != nil {
-		log.Printf("Incorrect date: %v", err)
-		return
-	}
 
 	repeat := r.FormValue("repeat")
 
 	result, err := task.NextDate(now, date, repeat)
 	if err != nil {
 		log.Println(err)
-	}
-
-	if repeat == "d 1" && validDate.After(now) {
-		result = validDate.AddDate(0, 0, 1).Format("20060102")
-	}
-	if repeat == "d 30" && validDate.After(now) {
-		result = validDate.AddDate(0, 0, 30).Format("20060102")
-	}
-
-	if validDate == now && repeat == "" {
-		result = ""
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
 	w.Header().Set("Content-Type", "string")
