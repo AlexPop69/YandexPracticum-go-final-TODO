@@ -8,7 +8,7 @@ import (
 )
 
 func NextDate(now time.Time, date string, repeat string) (string, error) {
-	if repeat == "" || repeat == "d 1" {
+	if repeat == "" {
 		return now.Format("20060102"), nil
 	}
 
@@ -54,12 +54,13 @@ func everyDay(now, date time.Time, days string) (string, error) {
 		return date.AddDate(0, 0, 1).Format("20060102"), nil
 	}
 
-	if date.Before(now) {
+	if !(now.Format("20060102") == date.Format("20060102")) {
 		for date.Before(now) {
+			if date.After(now) || date.Equal(now) {
+				break
+			}
 			date = date.AddDate(0, 0, d)
 		}
-	} else {
-		date = date.AddDate(0, 0, d)
 	}
 
 	return date.Format("20060102"), nil

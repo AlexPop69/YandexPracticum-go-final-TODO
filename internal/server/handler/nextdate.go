@@ -15,10 +15,17 @@ func GetNextDate(w http.ResponseWriter, r *http.Request) {
 
 	now, err := time.Parse("20060102", r.FormValue("now"))
 	if err != nil {
-		log.Fatalf("Incorrect now date: %v", err)
+		log.Printf("Incorrect now date: %v", err)
+		return
 	}
 
 	date := r.FormValue("date")
+	validDate, err := time.Parse("20060102", r.FormValue("date"))
+	if err != nil {
+		log.Printf("Incorrect date: %v", err)
+		return
+	}
+
 	repeat := r.FormValue("repeat")
 
 	result, err := task.NextDate(now, date, repeat)
@@ -26,9 +33,11 @@ func GetNextDate(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	validDate, _ := time.Parse("20060102", date)
 	if repeat == "d 1" && validDate.After(now) {
 		result = validDate.AddDate(0, 0, 1).Format("20060102")
+	}
+	if repeat == "d 30" && validDate.After(now) {
+		result = validDate.AddDate(0, 0, 30).Format("20060102")
 	}
 
 	if validDate == now && repeat == "" {
