@@ -25,7 +25,7 @@ func (s *Storage) Add(t *task.Task) (int, error) {
 
 	id, err := ins.LastInsertId()
 	if err != nil {
-		return 0, fmt.Errorf("can't het last insert id: %v", err)
+		return 0, fmt.Errorf("can't get last insert id: %v", err)
 	}
 
 	return int(id), nil

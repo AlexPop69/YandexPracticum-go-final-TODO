@@ -114,7 +114,7 @@ func GetTasks(db *storage.Storage) http.HandlerFunc {
 
 		_, err = w.Write(resp)
 		if err != nil {
-			log.Fatalf("can't write response: %v", err)
+			log.Fatalf("can't write response by GetTasks: %v", err)
 		} else {
 			log.Printf("GetTasks is successful. %d tasks found", len(tasks))
 		}

@@ -12,7 +12,7 @@ func NextDate(now time.Time, date string, repeat string) (string, error) {
 		return now.Format("20060102"), nil
 	}
 
-	realDate, err := time.Parse("20060102", date)
+	validDate, err := time.Parse("20060102", date)
 	if err != nil {
 		return "", fmt.Errorf("incorrect date %v", err)
 	}
@@ -24,19 +24,19 @@ func NextDate(now time.Time, date string, repeat string) (string, error) {
 	switch {
 	//задача переносится на указанное число дней
 	case rule == "d" && rightLen:
-		result, err = everyDay(now, realDate, repeat[2:])
+		result, err = everyDay(now, validDate, repeat[2:])
 
 	// задача назначается в указанные дни недели, где 1 — понедельник, 7 — воскресенье
 	case rule == "w" && rightLen:
-		result, err = everyWeek(realDate, now, repeat[2:])
+		result, err = everyWeek(validDate, now, repeat[2:])
 
 	// задача назначается в указанные дни месяца (1-31)
 	case rule == "m" && rightLen:
-		result, err = everyMonth(realDate, now, repeat[2:])
+		result, err = everyMonth(validDate, now, repeat[2:])
 
 	// задача выполняется ежегодно
 	case rule == "y":
-		result, err = everyYear(now, realDate)
+		result, err = everyYear(now, validDate)
 	default:
 		return "", fmt.Errorf("incorrect repetition rule %v", err)
 	}

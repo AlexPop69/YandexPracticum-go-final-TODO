@@ -26,12 +26,12 @@ func GetNextDate(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	realDate, _ := time.Parse("20060102", date)
-	if repeat == "d 1" && realDate.After(now) {
-		result = realDate.AddDate(0, 0, 1).Format("20060102")
+	validDate, _ := time.Parse("20060102", date)
+	if repeat == "d 1" && validDate.After(now) {
+		result = validDate.AddDate(0, 0, 1).Format("20060102")
 	}
 
-	if realDate == now && repeat == "" {
+	if validDate == now && repeat == "" {
 		result = ""
 	}
 
