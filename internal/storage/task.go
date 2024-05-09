@@ -117,3 +117,46 @@ func (s *Storage) SearchTasks(search string) ([]task.Task, error) {
 
 	return tasks, nil
 }
+
+func (s *Storage) GetTask(id string) (task.Task, error) {
+	log.Println("Search task by ID")
+
+	row := s.db.QueryRow(
+		`SELECT * 
+		FROM scheduler 
+		WHERE id = :id`,
+		sql.Named("id", id),
+	)
+
+	var t task.Task
+
+	err := row.Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
+	if err != nil {
+		return task.Task{}, fmt.Errorf("can't get task by id %s: %v", id, err)
+	}
+
+	return t, nil
+}
+
+func (s *Storage) Update(t task.Task) error {
+	log.Printf("Update task by ID:%s", t.ID)
+
+	_, err := s.db.Exec(
+		`UPDATE scheduler 
+		SET date=:date, title= :title, comment= :comment, repeat= :repeat
+		WHERE id= :id`,
+		sql.Named("date", t.Date),
+		sql.Named("title", t.Title),
+		sql.Named("comment", t.Comment),
+		sql.Named("repeat", t.Repeat),
+		sql.Named("id", t.ID),
+	)
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("can't update task: %v", err)
+	}
+
+	log.Println("update successful")
+
+	return nil
+}

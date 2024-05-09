@@ -24,6 +24,8 @@ func main() {
 	r.Get("/api/nextdate", handler.GetNextDate)
 	r.Post("/api/task", handler.AddTask(db))
 	r.Get("/api/tasks", handler.GetTasks(db))
+	r.Get("/api/task", handler.GetTask(db))
+	r.Put("/api/task", handler.UpdateTask(db))
 
 	server := new(server.Server)
 	if err := server.Run(r); err != nil {
