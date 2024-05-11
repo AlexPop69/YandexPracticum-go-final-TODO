@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -132,7 +133,12 @@ func (s *Storage) GetTask(id string) (task.Task, error) {
 
 	err := row.Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
 	if err != nil {
-		return task.Task{}, fmt.Errorf("can't get task by id %s: %v", id, err)
+		log.Println("can't get task by id:", id, err)
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return task.Task{}, errors.New(" ")
+		}
+		return task.Task{}, err
 	}
 
 	return t, nil
@@ -157,6 +163,61 @@ func (s *Storage) Update(t task.Task) error {
 	}
 
 	log.Println("update successful")
+
+	return nil
+}
+
+func (s *Storage) DoneTask(id string) error {
+	log.Println("Done task ID:", id)
+
+	t, err := s.GetTask(id)
+	if err != nil {
+		log.Println(err)
+		return errors.New("task not found")
+	}
+
+	if t.Repeat == "" {
+		log.Println("Repeat is empty, task will delete")
+		err = s.DelTask(id)
+		log.Println(err)
+
+		return nil
+	}
+
+	if t.Repeat != "" {
+		t.Date, err = task.NextDate(time.Now(), t.Date, t.Repeat)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
+		err = s.Update(t)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+	}
+
+	log.Println("task is done id:", id)
+
+	return nil
+}
+
+func (s *Storage) DelTask(id string) error {
+	log.Println("Delete task ID:", id)
+
+	_, err := s.db.Exec(
+		`DELETE
+		FROM scheduler
+		WHERE id = :id`,
+		sql.Named("id", id),
+	)
+	if err != nil {
+		log.Println("can't delete task:", err)
+		return errors.New("task not found")
+	}
+
+	log.Println("delete task successful")
 
 	return nil
 }

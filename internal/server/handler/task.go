@@ -132,9 +132,10 @@ func GetTask(storage *storage.Storage) http.HandlerFunc {
 
 		task, err := storage.GetTask(id)
 		if err != nil {
-			log.Printf("can't get task: %v", err)
+			log.Println("can't get task:", err)
+			json.NewEncoder(w).Encode(map[string]string{"error": string(err.Error())})
 			http.Error(w, err.Error(), http.StatusNoContent)
-			json.NewEncoder(w).Encode(map[string]string{"error": "can't get task"})
+
 			return
 		}
 
@@ -150,7 +151,7 @@ func GetTask(storage *storage.Storage) http.HandlerFunc {
 
 		_, err = w.Write(resp)
 		if err != nil {
-			log.Fatalf("can't write response by GetTask: %v", err)
+			log.Println("can't write response by GetTask:", err)
 		} else {
 			log.Println("GetTask is successful")
 		}
@@ -193,5 +194,65 @@ func UpdateTask(storage *storage.Storage) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 
 		json.NewEncoder(w).Encode(map[string]string{})
+	}
+}
+
+func DoneTask(storage *storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println("Received reqest DoneTask")
+
+		id := r.URL.Query().Get("id")
+
+		_, err := strconv.Atoi(id)
+		if err != nil {
+			log.Println("id is not a number:", err)
+			json.NewEncoder(w).Encode(map[string]string{"error": "id is not a number"})
+			return
+		}
+
+		err = storage.DoneTask(id)
+		if err != nil {
+			json.NewEncoder(w).Encode(map[string]string{"error": "can't done task"})
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+
+		err = json.NewEncoder(w).Encode(map[string]string{})
+		if err != nil {
+			log.Println("Can't write response by DoneTask:", err)
+		} else {
+			log.Println("Done task is successful")
+		}
+	}
+}
+
+func DelTask(storage *storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println("Received reqest DelTask")
+
+		id := r.URL.Query().Get("id")
+
+		_, err := strconv.Atoi(id)
+		if err != nil {
+			log.Println("id is not a number:", err)
+			json.NewEncoder(w).Encode(map[string]string{"error": string(err.Error())})
+			return
+		}
+
+		err = storage.DelTask(id)
+		if err != nil {
+			log.Println("Failed to delete task")
+			json.NewEncoder(w).Encode(map[string]string{"error": string(err.Error())})
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		if err = json.NewEncoder(w).Encode(map[string]string{}); err != nil {
+			log.Println("err encode:", err)
+			http.Error(w, `{"error":"Failed to encode response"}`, http.StatusInternalServerError)
+		}
+
 	}
 }

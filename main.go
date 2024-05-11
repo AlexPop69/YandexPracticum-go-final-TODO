@@ -26,6 +26,8 @@ func main() {
 	r.Get("/api/tasks", handler.GetTasks(db))
 	r.Get("/api/task", handler.GetTask(db))
 	r.Put("/api/task", handler.UpdateTask(db))
+	r.Post("/api/task/done", handler.DoneTask(db))
+	r.Delete("/api/task", handler.DelTask(db))
 
 	server := new(server.Server)
 	if err := server.Run(r); err != nil {
