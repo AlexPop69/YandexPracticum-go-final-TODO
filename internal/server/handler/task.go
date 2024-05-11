@@ -18,8 +18,8 @@ func AddTask(storage *storage.Storage) http.HandlerFunc {
 
 		err := json.NewDecoder(r.Body).Decode(&t)
 		if err != nil {
-			log.Println("Can't read request body", err)
-			http.Error(w, `{"error":"Can't read request body"}`, http.StatusBadRequest)
+			log.Println("JSON deserialization error", err)
+			http.Error(w, `{"error":"JSON deserialization error"}`, http.StatusBadRequest)
 			return
 		}
 

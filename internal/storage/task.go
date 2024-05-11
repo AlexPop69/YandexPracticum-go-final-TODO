@@ -3,7 +3,6 @@ package storage
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"log"
 	"time"
 
@@ -21,12 +20,14 @@ func (s *Storage) Add(t *task.Task) (int, error) {
 		sql.Named("repeat", t.Repeat),
 	)
 	if err != nil {
-		return 0, fmt.Errorf("can't add task: %v", err)
+		log.Println("can't add task:", err)
+		return 0, err
 	}
 
 	id, err := ins.LastInsertId()
 	if err != nil {
-		return 0, fmt.Errorf("can't get last insert id: %v", err)
+		log.Println("can't get task id:", err)
+		return 0, err
 	}
 
 	return int(id), nil
@@ -41,8 +42,8 @@ func (s *Storage) GetList() ([]task.Task, error) {
 		sql.Named("limit", taskLimit),
 	)
 	if err != nil {
-		log.Printf("can't get tasks by GetList: %v", err)
-		return nil, fmt.Errorf("can't get tasks: %v", err)
+		log.Println("can't get tasks by GetList:", err)
+		return nil, err
 	}
 
 	defer rows.Close()
@@ -54,8 +55,8 @@ func (s *Storage) GetList() ([]task.Task, error) {
 
 		err := rows.Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
 		if err != nil {
-			log.Printf("can't get tasks by GetList: %v", err)
-			return nil, fmt.Errorf("can't get tasks %v", err)
+			log.Println("can't get tasks by GetList:", err)
+			return nil, err
 		}
 
 		tasks = append(tasks, t)
@@ -65,7 +66,7 @@ func (s *Storage) GetList() ([]task.Task, error) {
 }
 
 func (s *Storage) SearchTasks(search string) ([]task.Task, error) {
-	log.Printf("looking for a task with search parameter %s", search)
+	log.Printf("looking for tasks with search parameter %s", search)
 
 	var rows *sql.Rows
 	var err error
@@ -98,7 +99,8 @@ func (s *Storage) SearchTasks(search string) ([]task.Task, error) {
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("%v", err)
+		log.Println("can't find tasks by SearchTasks:", err)
+		return nil, err
 	}
 
 	defer rows.Close()
@@ -109,7 +111,8 @@ func (s *Storage) SearchTasks(search string) ([]task.Task, error) {
 		t := task.Task{}
 		err := rows.Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
 		if err != nil {
-			return nil, fmt.Errorf("can't find tasks by SearchTasks %v", err)
+			log.Println("can't find tasks by SearchTasks.", err)
+			return nil, err
 		}
 
 		tasks = append(tasks, t)
@@ -120,7 +123,7 @@ func (s *Storage) SearchTasks(search string) ([]task.Task, error) {
 }
 
 func (s *Storage) GetTask(id string) (task.Task, error) {
-	log.Println("Search task by ID")
+	log.Println("Search task by ID:", id)
 
 	row := s.db.QueryRow(
 		`SELECT * 
@@ -158,8 +161,8 @@ func (s *Storage) Update(t task.Task) error {
 		sql.Named("id", t.ID),
 	)
 	if err != nil {
-		log.Println(err)
-		return fmt.Errorf("can't update task: %v", err)
+		log.Println("can't update task:", err)
+		return err
 	}
 
 	log.Println("update successful")
