@@ -7,12 +7,14 @@ import (
 	"time"
 )
 
+const layoutDate = "20060102"
+
 func NextDate(now time.Time, date string, repeat string) (string, error) {
 	if repeat == "" {
 		return "", fmt.Errorf("repeat is empty")
 	}
 
-	validDate, err := time.Parse("20060102", date)
+	validDate, err := time.Parse(layoutDate, date)
 	if err != nil {
 		return "", fmt.Errorf("incorrect date %v", err)
 	}
@@ -55,7 +57,7 @@ func everyDay(now, date time.Time, days string) (string, error) {
 		resultDate = resultDate.AddDate(0, 0, d)
 	}
 
-	return resultDate.Format("20060102"), nil
+	return resultDate.Format(layoutDate), nil
 }
 
 func everyWeek(date, now time.Time, repeat string) (string, error) {
@@ -77,7 +79,7 @@ func everyWeek(date, now time.Time, repeat string) (string, error) {
 			weekDay = 7
 		}
 
-		week[weekDay] = date.Format("20060102")
+		week[weekDay] = date.Format(layoutDate)
 
 		for _, day := range days {
 			d, err := strconv.Atoi(day)
@@ -96,12 +98,172 @@ func everyWeek(date, now time.Time, repeat string) (string, error) {
 }
 
 func everyMonth(date, now time.Time, repeat string) (string, error) {
-	return "", nil
+	result := ""
+
+	if date.Before(now) {
+		date = now
+	}
+
+	// получаем количество аргументов repeat
+	args := strings.Split(repeat, " ")
+
+	// первый аргумент - по каким дням
+	days := strings.Split(args[0], ",")
+
+	// второй аргумент - по каким месяцам
+	if len(args) > 1 {
+		months := strings.Split(args[1], ",")
+
+		needDate, err := monthAndDays(date, months, days)
+		if err != nil {
+			return "", err
+		}
+
+		result = needDate.Format(layoutDate)
+
+	} else {
+		needDate, err := onlyDays(date, days)
+		if err != nil {
+			return "", err
+		}
+
+		result = needDate.Format(layoutDate)
+	}
+
+	return result, nil
+}
+
+func onlyDays(date time.Time, days []string) (time.Time, error) {
+	month := getNextMonth(date)
+
+	resultSlice := make([]time.Time, 0)
+
+	for _, v := range days {
+		targetDay, err := strconv.Atoi(v)
+		if err != nil || targetDay > 31 || targetDay == 0 || targetDay < -2 {
+			return date, fmt.Errorf(`incorrect repetition rule in "m"`)
+		}
+
+		date = date.AddDate(0, 0, 1)
+
+		for _, day := range month {
+			if targetDay == -1 {
+				day = endOfMonth(day)
+				targetDay = int(day.Day())
+			} else if targetDay == -2 {
+				day = endOfMonth(day).AddDate(0, 0, -1)
+				targetDay = int(day.Day())
+			}
+
+			if targetDay == int(day.Day()) {
+				resultSlice = append(resultSlice, day)
+			}
+		}
+	}
+
+	for {
+		date = date.AddDate(0, 0, 1)
+
+		for _, v := range resultSlice {
+			if date.Truncate(24 * time.Hour).Equal(v.Truncate(24 * time.Hour)) {
+				return v, nil
+			}
+		}
+	}
+}
+
+// функция для получения следующих двух месяцев
+func getNextMonth(date time.Time) []time.Time {
+	month := make([]time.Time, 0)
+
+	day := date.AddDate(0, 0, 1)
+
+	for j := 0; j < 62; j++ {
+		month = append(month, day)
+
+		day = day.AddDate(0, 0, 1)
+	}
+
+	return month
 }
 
 // функция для получения последнего дня месяца
-func EndOfMonth(date time.Time) time.Time {
+func endOfMonth(date time.Time) time.Time {
 	return date.AddDate(0, 1, -date.Day())
+}
+
+func monthAndDays(date time.Time, month, days []string) (time.Time, error) {
+	year := getNextYear(date)
+
+	resultSlice := make([]time.Time, 0)
+
+	for _, m := range month {
+		targetMonth, err := strconv.Atoi(m)
+		if err != nil || targetMonth > 12 || targetMonth <= 0 {
+			return date, fmt.Errorf(`incorrect repetition rule in "m"`)
+		}
+
+		date = date.AddDate(0, 0, 1)
+
+		for _, day := range year[targetMonth] {
+
+			for _, d := range days {
+				targetDay, err := strconv.Atoi(d)
+				if err != nil || targetDay > 31 || targetDay < -2 {
+					return date, fmt.Errorf(`incorrect repetition rule in "m"`)
+				}
+
+				if targetDay == -1 {
+					day = endOfMonth(day)
+					targetDay = int(day.Day())
+
+				} else if targetDay == -2 {
+					day = endOfMonth(day).AddDate(0, 0, -1)
+					targetDay = int(day.Day())
+				}
+
+				if targetDay == int(day.Day()) {
+					resultSlice = append(resultSlice, day)
+				}
+
+			}
+		}
+	}
+
+	for {
+		date = date.AddDate(0, 0, 1)
+
+		for _, v := range resultSlice {
+			if date.Truncate(24 * time.Hour).Equal(v.Truncate(24 * time.Hour)) {
+				return v, nil
+			}
+		}
+	}
+}
+
+func getNextYear(date time.Time) map[int][]time.Time {
+	year := make(map[int][]time.Time)
+	var month time.Month
+	day := date.AddDate(0, 0, 1)
+
+	for i := 0; i < 12; i++ {
+		month = day.Month()
+
+		for j := 0; j < 31; j++ {
+			year[int(month)] = append(year[int(month)], day)
+
+			if day == endOfMonth(day) {
+				break
+			}
+
+			day = day.AddDate(0, 0, 1)
+
+		}
+		day = day.AddDate(0, 0, 1)
+	}
+
+	return year
+
 }
 
 func everyYear(now, date time.Time) (string, error) {
