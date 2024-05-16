@@ -9,7 +9,9 @@ services:
       - ${TODO_PORT}:${TODO_PORT}
     depends_on:
       - sqlite3
-
+    environment:
+      TODO_DBFILE: ${TODO_DBFILE}
+      TODO_PASSWORD: ${TODO_PASSWORD}
 
   sqlite3:
     image: nouchka/sqlite3:latest

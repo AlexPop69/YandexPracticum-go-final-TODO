@@ -21,13 +21,15 @@ func main() {
 
 	r.Handle("/*", handler.GetFront())
 
+	r.Post("/api/signin", handler.SignIn())
+
 	r.Get("/api/nextdate", handler.GetNextDate)
-	r.Post("/api/task", handler.AddTask(db))
-	r.Get("/api/tasks", handler.GetTasks(db))
-	r.Get("/api/task", handler.GetTask(db))
-	r.Put("/api/task", handler.UpdateTask(db))
-	r.Post("/api/task/done", handler.DoneTask(db))
-	r.Delete("/api/task", handler.DelTask(db))
+	r.Post("/api/task", handler.Auth(handler.AddTask(db)))
+	r.Get("/api/tasks", handler.Auth(handler.GetTasks(db)))
+	r.Get("/api/task", handler.Auth(handler.GetTask(db)))
+	r.Put("/api/task", handler.Auth(handler.UpdateTask(db)))
+	r.Post("/api/task/done", handler.Auth(handler.DoneTask(db)))
+	r.Delete("/api/task", handler.Auth(handler.DelTask(db)))
 
 	server := new(server.Server)
 	if err := server.Run(r); err != nil {
