@@ -63,13 +63,12 @@ func everyDay(now, date time.Time, days string) (string, error) {
 func everyWeek(date, now time.Time, repeat string) (string, error) {
 	result := ""
 
-	week := make(map[int]string)
-
 	if date.Before(now) {
 		date = now
 	}
 
-	days := strings.Split(string(repeat), ",")
+	days := strings.Split(repeat, ",")
+	week := make(map[int]string)
 
 	for i := 1; i <= 7; i++ {
 		date = date.AddDate(0, 0, 1)
@@ -110,19 +109,20 @@ func everyMonth(date, now time.Time, repeat string) (string, error) {
 	// первый аргумент - по каким дням
 	days := strings.Split(args[0], ",")
 
-	// второй аргумент - по каким месяцам
-	if len(args) > 1 {
-		months := strings.Split(args[1], ",")
-
-		needDate, err := monthAndDays(date, months, days)
+	if len(args) == 1 {
+		needDate, err := onlyDays(date, days)
 		if err != nil {
 			return "", err
 		}
 
 		result = needDate.Format(layoutDate)
+	}
 
-	} else {
-		needDate, err := onlyDays(date, days)
+	// второй аргумент - по каким месяцам
+	if len(args) > 1 {
+		months := strings.Split(args[1], ",")
+
+		needDate, err := monthAndDays(date, months, days)
 		if err != nil {
 			return "", err
 		}
@@ -147,13 +147,7 @@ func onlyDays(date time.Time, days []string) (time.Time, error) {
 		date = date.AddDate(0, 0, 1)
 
 		for _, day := range month {
-			if targetDay == -1 {
-				day = endOfMonth(day)
-				targetDay = int(day.Day())
-			} else if targetDay == -2 {
-				day = endOfMonth(day).AddDate(0, 0, -1)
-				targetDay = int(day.Day())
-			}
+			ifTargetDayNegative(&targetDay, day)
 
 			if targetDay == int(day.Day()) {
 				resultSlice = append(resultSlice, day)
@@ -161,15 +155,7 @@ func onlyDays(date time.Time, days []string) (time.Time, error) {
 		}
 	}
 
-	for {
-		date = date.AddDate(0, 0, 1)
-
-		for _, v := range resultSlice {
-			if date.Truncate(24 * time.Hour).Equal(v.Truncate(24 * time.Hour)) {
-				return v, nil
-			}
-		}
-	}
+	return resultDate(date, &resultSlice), nil
 }
 
 // функция для получения следующих двух месяцев
@@ -185,11 +171,6 @@ func getNextMonth(date time.Time) []time.Time {
 	}
 
 	return month
-}
-
-// функция для получения последнего дня месяца
-func endOfMonth(date time.Time) time.Time {
-	return date.AddDate(0, 1, -date.Day())
 }
 
 func monthAndDays(date time.Time, month, days []string) (time.Time, error) {
@@ -213,32 +194,17 @@ func monthAndDays(date time.Time, month, days []string) (time.Time, error) {
 					return date, fmt.Errorf(`incorrect repetition rule in "m"`)
 				}
 
-				if targetDay == -1 {
-					day = endOfMonth(day)
-					targetDay = int(day.Day())
-
-				} else if targetDay == -2 {
-					day = endOfMonth(day).AddDate(0, 0, -1)
-					targetDay = int(day.Day())
-				}
+				ifTargetDayNegative(&targetDay, day)
 
 				if targetDay == int(day.Day()) {
 					resultSlice = append(resultSlice, day)
 				}
-
 			}
+
 		}
 	}
 
-	for {
-		date = date.AddDate(0, 0, 1)
-
-		for _, v := range resultSlice {
-			if date.Truncate(24 * time.Hour).Equal(v.Truncate(24 * time.Hour)) {
-				return v, nil
-			}
-		}
-	}
+	return resultDate(date, &resultSlice), nil
 }
 
 func getNextYear(date time.Time) map[int][]time.Time {
@@ -252,7 +218,7 @@ func getNextYear(date time.Time) map[int][]time.Time {
 		for j := 0; j < 31; j++ {
 			year[int(month)] = append(year[int(month)], day)
 
-			if day == endOfMonth(day) {
+			if day == day.AddDate(0, 1, -day.Day()) {
 				break
 			}
 
@@ -263,7 +229,29 @@ func getNextYear(date time.Time) map[int][]time.Time {
 	}
 
 	return year
+}
 
+func ifTargetDayNegative(targetDay *int, day time.Time) {
+	switch *targetDay {
+	case -1:
+		day = day.AddDate(0, 1, -day.Day())
+		*targetDay = int(day.Day())
+	case -2:
+		day = day.AddDate(0, 1, -day.Day()-1)
+		*targetDay = int(day.Day())
+	}
+}
+
+func resultDate(date time.Time, resultSlice *[]time.Time) time.Time {
+	for {
+		date = date.AddDate(0, 0, 1)
+
+		for _, v := range *resultSlice {
+			if date.Truncate(24 * time.Hour).Equal(v.Truncate(24 * time.Hour)) {
+				return v
+			}
+		}
+	}
 }
 
 func everyYear(now, date time.Time) (string, error) {
@@ -275,5 +263,5 @@ func everyYear(now, date time.Time) (string, error) {
 		date = date.AddDate(1, 0, 0)
 	}
 
-	return date.Format("20060102"), nil
+	return date.Format(layoutDate), nil
 }

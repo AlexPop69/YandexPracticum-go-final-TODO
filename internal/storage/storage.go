@@ -1,65 +1,59 @@
 package storage
 
 import (
+	"YandexPracticum-go-final-TODO/internal/config"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 
 	_ "modernc.org/sqlite"
 )
 
-const (
-	varEnvDBFile = "TODO_DBFILE"
-	stdDbPath    = "./db"
-	stdDbName    = "scheduler.db"
-	dbDriver     = "sqlite"
-)
+const dbDriver = "sqlite"
+
+var dbPath = config.DbPath()
 
 type Storage struct {
 	db *sql.DB
 }
 
-func New(storagePath func() string) (*Storage, error) {
-	dbPath := Path()
+func New() (*Storage, error) {
+	s := &Storage{}
 
-	if isExist(dbPath) {
-		createDB(dbPath)
-	} else {
-		log.Println("Database is already exist")
+	err := s.initDB()
+	if err != nil {
+		return nil, err
+	}
+
+	return s, nil
+}
+
+func (s *Storage) initDB() error {
+	var err error
+
+	err = createDB(dbPath)
+	if err != nil {
+		return err
 	}
 
 	db, err := sql.Open(dbDriver, dbPath)
 	if err != nil {
-		return nil, fmt.Errorf("can't open data base %w", err)
+		log.Println("Can't open database")
+		return err
 	}
 
-	createNewTable(db)
-
-	return &Storage{db: db}, nil
-}
-
-func Path() string {
-	storagePath, exists := os.LookupEnv(varEnvDBFile)
-
-	if !exists || storagePath == "" {
-		storagePath = filepath.Join(stdDbPath, stdDbName)
-		log.Printf(`Database storage address: %s`, storagePath)
-	} else {
-		log.Printf(`Database storage address %s retrieved from env variable "%s" `,
-			storagePath,
-			varEnvDBFile)
+	if err = db.Ping(); err != nil {
+		return err
 	}
 
-	return storagePath
-}
+	if err = createNewTable(db); err != nil {
+		return err
+	}
 
-func isExist(dbPath string) bool {
-	_, err := os.Stat(dbPath)
+	s.db = db
 
-	return errors.Is(err, os.ErrNotExist)
+	return nil
 }
 
 func createDB(dbPath string) error {

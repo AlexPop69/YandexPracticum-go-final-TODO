@@ -1,27 +1,25 @@
 package handler
 
 import (
+	"YandexPracticum-go-final-TODO/internal/config"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
-const (
-	stdPass    = "1234"
-	varEnvPass = "TODO_PASSWORD"
-	secretKey  = "my_secret_key"
-)
-
 type Password struct {
 	Password string `json:"password"`
 }
+
+const secretKey = "my_secret_key"
+
+var getPass = config.Password()
 
 func SignIn() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -40,10 +38,9 @@ func SignIn() http.HandlerFunc {
 			return
 		}
 
-		storedPasword := getPassword()
+		storedPasword := getPass
 
 		if pass.Password == storedPasword {
-
 			token, err := GetToken(pass.Password)
 			if err != nil {
 				json.NewEncoder(w).Encode(map[string]string{"error": string(err.Error())})
@@ -52,8 +49,9 @@ func SignIn() http.HandlerFunc {
 			}
 
 			json.NewEncoder(w).Encode(map[string]string{"token": token})
+		}
 
-		} else {
+		if pass.Password != storedPasword {
 			json.NewEncoder(w).Encode(map[string]string{"error": "incorrect password"})
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
@@ -64,7 +62,7 @@ func SignIn() http.HandlerFunc {
 func Auth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		pass := getPassword()
+		pass := getPass
 
 		fmt.Println("Password:", pass)
 
@@ -98,15 +96,6 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 
 		next(w, r)
 	}
-}
-
-func getPassword() string {
-	password, exists := os.LookupEnv(varEnvPass)
-	if !exists || password == "" {
-		password = stdPass
-	}
-
-	return password
 }
 
 type Claims struct {

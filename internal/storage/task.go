@@ -62,6 +62,11 @@ func (s *Storage) GetList() ([]task.Task, error) {
 		tasks = append(tasks, t)
 	}
 
+	if rows.Err() != nil {
+		log.Println("can't get tasks by GetList:", rows.Err())
+		return nil, rows.Err()
+	}
+
 	return tasks, nil
 }
 
@@ -166,42 +171,6 @@ func (s *Storage) Update(t task.Task) error {
 	}
 
 	log.Println("update successful")
-
-	return nil
-}
-
-func (s *Storage) DoneTask(id string) error {
-	log.Println("Done task ID:", id)
-
-	t, err := s.GetTask(id)
-	if err != nil {
-		log.Println(err)
-		return errors.New("task not found")
-	}
-
-	if t.Repeat == "" {
-		log.Println("Repeat is empty, task will delete")
-		err = s.DelTask(id)
-		log.Println(err)
-
-		return nil
-	}
-
-	if t.Repeat != "" {
-		t.Date, err = task.NextDate(time.Now(), t.Date, t.Repeat)
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-
-		err = s.Update(t)
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-	}
-
-	log.Println("task is done id:", id)
 
 	return nil
 }

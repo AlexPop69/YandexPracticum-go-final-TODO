@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"YandexPracticum-go-final-TODO/internal/storage"
 	"YandexPracticum-go-final-TODO/internal/task"
@@ -210,10 +211,33 @@ func DoneTask(storage *storage.Storage) http.HandlerFunc {
 			return
 		}
 
-		err = storage.DoneTask(id)
+		t, err := storage.GetTask(id)
 		if err != nil {
-			json.NewEncoder(w).Encode(map[string]string{"error": "can't done task"})
+			json.NewEncoder(w).Encode(map[string]string{"error": "can't get task " + id})
 			return
+		}
+
+		if t.Repeat == "" {
+			log.Println("Repeat is empty, task will delete")
+			err = storage.DelTask(id)
+			if err != nil {
+				json.NewEncoder(w).Encode(map[string]string{"error": "can't delete task " + id})
+				return
+			}
+		}
+
+		if t.Repeat != "" {
+			t.Date, err = task.NextDate(time.Now(), t.Date, t.Repeat)
+			if err != nil {
+				json.NewEncoder(w).Encode(map[string]string{"error": string(err.Error())})
+				return
+			}
+
+			err = storage.Update(t)
+			if err != nil {
+				json.NewEncoder(w).Encode(map[string]string{"error": string(err.Error())})
+				return
+			}
 		}
 
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -223,7 +247,7 @@ func DoneTask(storage *storage.Storage) http.HandlerFunc {
 		if err != nil {
 			log.Println("Can't write response by DoneTask:", err)
 		} else {
-			log.Println("Done task is successful")
+			log.Println("Done task " + id + " is successful")
 		}
 	}
 }

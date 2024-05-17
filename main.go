@@ -11,11 +11,10 @@ import (
 )
 
 func main() {
-	db, err := storage.New(storage.Path)
+	db, err := storage.New()
 	if err != nil {
-		log.Fatal("can't init storage", err)
+		log.Fatal(err)
 	}
-	_ = db
 
 	r := chi.NewRouter()
 

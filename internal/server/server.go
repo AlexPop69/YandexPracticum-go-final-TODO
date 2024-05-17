@@ -1,14 +1,9 @@
 package server
 
 import (
+	"YandexPracticum-go-final-TODO/internal/config"
 	"log"
 	"net/http"
-	"os"
-)
-
-const (
-	stdPort    = "7540"
-	varEnvPort = "TODO_PORT"
 )
 
 type Server struct {
@@ -16,25 +11,15 @@ type Server struct {
 	Handler    http.Handler
 }
 
+var port = config.Port()
+
 func (s *Server) Run(router http.Handler) error {
 	s.httpServer = &http.Server{
-		Addr:    getPort(),
+		Addr:    port,
 		Handler: router,
 	}
 
 	log.Printf("Server started on %s", s.httpServer.Addr)
 
 	return s.httpServer.ListenAndServe()
-}
-
-// Function to get the port from the environment variable TODO_PORT
-func getPort() string {
-	port, exists := os.LookupEnv(varEnvPort)
-	if !exists || port == "" {
-		port = stdPort
-	}
-
-	log.Printf(`Retrieved port %s from env variable "%s"`, port, varEnvPort)
-
-	return ":" + port
 }
