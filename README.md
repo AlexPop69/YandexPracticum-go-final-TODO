@@ -110,3 +110,13 @@ API будет следующие операции:
 `- export TODO_DBFILE=./db/scheduler.db`
 
 `- export TODO_PASSWORD=1234`
+
+## Стек:
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/go/go-original.svg" 
+title="golang" width="50" height="50"/>&nbsp;
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-original.svg"          
+  title="docker" width="50" height="50"/>&nbsp;
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/sqlite/sqlite-original.svg"          
+  title="sqlite" width="50" height="50"/>&nbsp;
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/git/git-original.svg"          
+    title="git" width="40" height="40"/>&nbsp;
